@@ -10,8 +10,8 @@ namespace :load do
     set :nginx_ssl_certificate, -> { "#{fetch(:nginx_server_name)}.crt" }
     set :nginx_ssl_certificate_key, -> { "#{fetch(:nginx_server_name)}.key" }
     set :nginx_upload_local_certificate, -> { true }
-    set :nginx_ssl_certificate_local_path, -> { "/etc/certificates/" }
-    set :nginx_ssl_certificate_key_local_path, -> { "/etc/certificates/keys" }
+    set :nginx_ssl_certificate_local_path, -> { "../certificates/#{fetch(:nginx_ssl_certificate)}" }
+    set :nginx_ssl_certificate_key_local_path, -> { "../certificates/#{fetch(:nginx_ssl_certificate_key)}" }
 
     set :unicorn_pid, -> { "#{current_path}/tmp/pids/unicorn.pid" }
     set :unicorn_config, -> { "#{shared_path}/config/unicorn.rb" }
@@ -31,11 +31,15 @@ namespace :nginx do
 
       if fetch(:nginx_use_ssl)
         if fetch(:nginx_upload_local_certificate)
-          put File.read(nginx_ssl_certificate_local_path), "/tmp/#{fetch(:nginx_ssl_certificate)}"
-          put File.read(nginx_ssl_certificate_key_local_path), "/tmp/#{fetch(:nginx_ssl_certificate_key)}"
+          if File.exists?(fetch(:nginx_ssl_certificate_local_path))
+            upload! StringIO.new(File.read(fetch(:nginx_ssl_certificate_local_path))), "/tmp/#{fetch(:nginx_ssl_certificate)}"
+            execute "sudo mv /tmp/#{fetch(:nginx_ssl_certificate)} /etc/ssl/certs/#{fetch(:nginx_ssl_certificate)}"
+          end
+          if File.exists?(fetch(:nginx_ssl_certificate_key_local_path))
+            upload! StringIO.new(File.read(fetch(:nginx_ssl_certificate_key_local_path))), "/tmp/#{fetch(:nginx_ssl_certificate_key)}"
+            execute "sudo mv /tmp/#{fetch(:nginx_ssl_certificate_key)} /etc/ssl/private/#{fetch(:nginx_ssl_certificate_key)}"
+          end
 
-          execute "sudo mv /tmp/#{fetch(:nginx_ssl_certificate)} /etc/ssl/certs/#{fetch(:nginx_ssl_certificate)}"
-          execute "sudo mv /tmp/#{fetch(:nginx_ssl_certificate_key)} /etc/ssl/private/#{fetch(:nginx_ssl_certificate_key)}"
         end
 
         execute "sudo chown root:root /etc/ssl/certs/#{fetch(:nginx_ssl_certificate)}"
