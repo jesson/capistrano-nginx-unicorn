@@ -39,11 +39,10 @@ namespace :nginx do
             upload! StringIO.new(File.read(fetch(:nginx_ssl_certificate_key_local_path))), "/tmp/#{fetch(:nginx_ssl_certificate_key)}"
             execute "sudo mv /tmp/#{fetch(:nginx_ssl_certificate_key)} /etc/ssl/private/#{fetch(:nginx_ssl_certificate_key)}"
           end
-
+          
+          execute "sudo chown root:root /etc/ssl/certs/#{fetch(:nginx_ssl_certificate)}"
+          execute "sudo chown root:root /etc/ssl/private/#{fetch(:nginx_ssl_certificate_key)}"
         end
-
-        execute "sudo chown root:root /etc/ssl/certs/#{fetch(:nginx_ssl_certificate)}"
-        execute "sudo chown root:root /etc/ssl/private/#{fetch(:nginx_ssl_certificate_key)}"
       end
     end
   end
